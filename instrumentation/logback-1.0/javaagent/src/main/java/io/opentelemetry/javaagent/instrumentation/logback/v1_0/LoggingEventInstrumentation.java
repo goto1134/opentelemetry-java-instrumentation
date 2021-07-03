@@ -17,6 +17,7 @@ import static net.bytebuddy.matcher.ElementMatchers.namedOneOf;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.instrumentation.logback.v1_0.internal.UnionMap;
@@ -69,6 +70,10 @@ public class LoggingEventInstrumentation implements TypeInstrumentation {
       }
 
       Map<String, String> spanContextData = new HashMap<>();
+      Baggage baggage = InstrumentationContext.get(ILoggingEvent.class, Baggage.class).get(event);
+      if (baggage != null) {
+        baggage.forEach((key, baggageEntry) -> spanContextData.put(key, baggageEntry.getValue()));
+      }
       SpanContext spanContext = currentSpan.getSpanContext();
       spanContextData.put(TRACE_ID, spanContext.getTraceId());
       spanContextData.put(SPAN_ID, spanContext.getSpanId());

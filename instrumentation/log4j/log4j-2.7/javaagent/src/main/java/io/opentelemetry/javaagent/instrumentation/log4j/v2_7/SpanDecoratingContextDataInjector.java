@@ -9,6 +9,7 @@ import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.S
 import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.TRACE_FLAGS;
 import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.TRACE_ID;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.javaagent.instrumentation.api.Java8BytecodeBridge;
 import java.util.List;
@@ -40,6 +41,8 @@ public final class SpanDecoratingContextDataInjector implements ContextDataInjec
     }
 
     StringMap newContextData = new SortedArrayStringMap(contextData);
+    Baggage baggage = Baggage.current();
+    baggage.forEach((key, baggageEntry) -> newContextData.putValue(key, baggageEntry.getValue()));
     newContextData.putValue(TRACE_ID, currentContext.getTraceId());
     newContextData.putValue(SPAN_ID, currentContext.getSpanId());
     newContextData.putValue(TRACE_FLAGS, currentContext.getTraceFlags().asHex());

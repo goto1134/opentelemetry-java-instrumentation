@@ -14,6 +14,7 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.javaagent.extension.instrumentation.TypeInstrumentation;
@@ -80,6 +81,11 @@ public class LoggingEventInstrumentation implements TypeInstrumentation {
           default:
             // do nothing
         }
+      } else if (value == null) {
+        Baggage baggage = InstrumentationContext.get(LoggingEvent.class, Baggage.class).get(event);
+        if (baggage != null && baggage.getEntryValue(key) != null) {
+          value = baggage.getEntryValue(key);
+        }
       }
     }
   }
@@ -107,6 +113,10 @@ public class LoggingEventInstrumentation implements TypeInstrumentation {
 
         // Assume already instrumented event if traceId is present.
         if (!mdc.containsKey(TRACE_ID)) {
+          Baggage baggage = InstrumentationContext.get(LoggingEvent.class, Baggage.class).get(event);
+          if (baggage != null) {
+            baggage.forEach((key, baggageEntry) -> mdc.put(key, baggageEntry.getValue()));
+          }
           Span span = InstrumentationContext.get(LoggingEvent.class, Span.class).get(event);
           if (span != null && span.getSpanContext().isValid()) {
             SpanContext spanContext = span.getSpanContext();

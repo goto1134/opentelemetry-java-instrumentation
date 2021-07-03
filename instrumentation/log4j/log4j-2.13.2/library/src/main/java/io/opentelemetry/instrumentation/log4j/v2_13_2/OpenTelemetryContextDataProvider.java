@@ -9,6 +9,7 @@ import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.S
 import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.TRACE_FLAGS;
 import static io.opentelemetry.instrumentation.api.log.LoggingContextConstants.TRACE_ID;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import java.util.Collections;
@@ -36,6 +37,8 @@ public class OpenTelemetryContextDataProvider implements ContextDataProvider {
     }
 
     Map<String, String> contextData = new HashMap<>();
+    Baggage baggage = Baggage.current();
+    baggage.forEach((key, baggageEntry) -> contextData.put(key, baggageEntry.getValue()));
     SpanContext spanContext = currentSpan.getSpanContext();
     contextData.put(TRACE_ID, spanContext.getTraceId());
     contextData.put(SPAN_ID, spanContext.getSpanId());
